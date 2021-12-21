@@ -1,4 +1,4 @@
-module github.com/Gabriel2233/geat
+module github.com/Gabriel2233/keeper
 
 go 1.17
 
