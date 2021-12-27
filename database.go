@@ -47,6 +47,8 @@ func NewStore(path string) (*Store, error) {
     return store, nil
 }
 
+// ### BASIC OPERATIONS ON SHEETS (CREATE, FIND, REMOVE AND LIST) ###
+
 func (s *Store) AddSheet(folder, name, alias, data string) (int64, error) {
     folderId, err := s.FindFolderIdByName(folder)
     if err != nil {
@@ -66,27 +68,27 @@ func (s *Store) AddSheet(folder, name, alias, data string) (int64, error) {
     return id, nil
 }
 
-func (s *Store) FindSheetIdByAlias(alias string) (int64, error) {
-    res := s.db.QueryRow("SELECT id FROM sheets WHERE alias = ?;", alias)
+func (s *Store) FindSheetByAlias(alias string) (Sheet, error) {
+    res := s.db.QueryRow("SELECT * FROM sheets WHERE alias = ?", alias)
 
-    var sheetId int64
-    if err := res.Scan(&sheetId); err != nil {
+    var sheet Sheet
+    if err := res.Scan(&sheet.Id, &sheet.Name, &sheet.Alias, &sheet.Data, &sheet.CreatedAt, &sheet.Folder); err != nil {
         if err == sql.ErrNoRows {
-            return -1, errors.New("No such sheet")
+            return sheet, errors.New("No such sheet")
         }
-        return  -1, err
+        return  sheet, err
     }
 
-    return sheetId, nil
+    return sheet, nil
 }
 
 func (s *Store) RemoveSheetByAlias(alias string) error {
-    id, err := s.FindSheetIdByAlias(alias)
+    sheet, err := s.FindSheetByAlias(alias)
     if err != nil {
         return err
     }
 
-    _, err = execStatement(s.db, "DELETE FROM sheets WHERE id = ?", id)
+    _, err = execStatement(s.db, "DELETE FROM sheets WHERE id = ?", sheet.Id)
     if err != nil {
         return err
     }
@@ -116,6 +118,8 @@ func (s *Store) ListSheetsInFolder(folder string) ([]Sheet, error) {
 
     return sheets, nil
 }
+
+// ### BASIC OPERATIONS ON FOLDERS (CREATE, FIND, REMOVE AND LIST) ###
 
 func (s *Store) AddFolder(name string) (int64, error) {
     res, err := execStatement(s.db, "INSERT INTO folders(name) VALUES(?)", name)
