@@ -6,16 +6,6 @@ import (
 	"text/tabwriter"
 )
 
-// keeper nf <FOLDER>
-// keeper lf
-// keeper rf <FOLDER> [i]
-
-// keper ns <FOLDER> <NAME> <ALIAS>
-// Data:
-
-// keeper ls <FOLDER>
-// keeper rs <SHEET> | <ALIAS>
-
 func main() {
     store, err := NewStore("./store.db")
     if err != nil {
@@ -45,10 +35,14 @@ func main() {
             os.Exit(1)
         }
 
-        fmt.Println("Folder list:")
-        for _, f := range folders {
-            fmt.Fprintf(w, "Id: %d\tName: %s\tCreated At: %s\n", f.Id, f.Name, f.CreatedAt.Format("Mon Jan _2"))
+        s, err := setupScreen()
+        if err != nil {
+            fmt.Printf("error: failed to setup tcell screen, reason: \n%s\n", err)
+            os.Exit(1)
         }
+
+        state := NewListFoldersState(s, folders, 0)
+        state.Loop()
     case "rf":
         err := RemoveFolder(store) 
         if err != nil {
