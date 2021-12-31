@@ -1,4 +1,4 @@
-package main
+package db
 
 import (
 	"database/sql"
@@ -72,6 +72,20 @@ func (s *Store) FindSheetByAlias(alias string) (Sheet, error) {
     res := s.db.QueryRow("SELECT * FROM sheets WHERE alias = ?", alias)
 
     var sheet Sheet
+    if err := res.Scan(&sheet.Id, &sheet.Name, &sheet.Alias, &sheet.Data, &sheet.CreatedAt, &sheet.Folder); err != nil {
+        if err == sql.ErrNoRows {
+            return sheet, errors.New("No such sheet")
+        }
+        return  sheet, err
+    }
+
+    return sheet, nil
+}
+
+func (s *Store) FindSheetById(id int64) (Sheet, error) {
+    var sheet Sheet
+
+    res := s.db.QueryRow("SELECT * FROM sheets WHERE id = ?", id)
     if err := res.Scan(&sheet.Id, &sheet.Name, &sheet.Alias, &sheet.Data, &sheet.CreatedAt, &sheet.Folder); err != nil {
         if err == sql.ErrNoRows {
             return sheet, errors.New("No such sheet")

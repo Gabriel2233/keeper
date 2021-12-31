@@ -1,4 +1,4 @@
-package main
+package cmd
 
 import (
 	"errors"
@@ -7,6 +7,8 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+
+    "github.com/Gabriel2233/keeper/database"
 )
 
 var (
@@ -30,7 +32,7 @@ func parseArgs(flagSet *flag.FlagSet, argsLen int) ([]string, error) {
 	return args, nil
 }
 
-func NewFolder(store *Store) (int64, error) {
+func NewFolder(store *db.Store) (int64, error) {
 	args, err := parseArgs(nfCmd, 1)
 	if err != nil {
 		return -1, err
@@ -44,8 +46,8 @@ func NewFolder(store *Store) (int64, error) {
 	return id, nil
 }
 
-func ListFolders(store *Store) ([]Folder, error) {
-	var ret []Folder
+func ListFolders(store *db.Store) ([]db.Folder, error) {
+	var ret []db.Folder
 	_, err := parseArgs(nfCmd, 0)
 	if err != nil {
 		return ret, err
@@ -59,7 +61,7 @@ func ListFolders(store *Store) ([]Folder, error) {
 	return ret, nil
 }
 
-func RemoveFolder(store *Store) error {
+func RemoveFolder(store *db.Store) error {
 	args, err := parseArgs(nfCmd, 1)
 	if err != nil {
 		return err
@@ -73,7 +75,7 @@ func RemoveFolder(store *Store) error {
 	return nil
 }
 
-func NewSheet(store *Store) (int64, error) {
+func NewSheet(store *db.Store) (int64, error) {
 	args, err := parseArgs(nfCmd, 3)
 	if err != nil {
 		return -1, err
@@ -107,8 +109,8 @@ func NewSheet(store *Store) (int64, error) {
 	return id, nil
 }
 
-func ListSheetsUnderFolder(store *Store) ([]Sheet, error) {
-	var ret []Sheet
+func ListSheetsUnderFolder(store *db.Store) ([]db.Sheet, error) {
+	var ret []db.Sheet
 	args, err := parseArgs(nfCmd, 1)
 	if err != nil {
 		return ret, err
@@ -124,7 +126,7 @@ func ListSheetsUnderFolder(store *Store) ([]Sheet, error) {
 	return ret, nil
 }
 
-func RemoveSheet(store *Store) error {
+func RemoveSheet(store *db.Store) error {
 	args, err := parseArgs(nfCmd, 1)
 	if err != nil {
 		return err

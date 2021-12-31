@@ -4,77 +4,54 @@ import (
 	"fmt"
 	"os"
 	"text/tabwriter"
+
+	"github.com/Gabriel2233/keeper/cmd"
+	db "github.com/Gabriel2233/keeper/database"
+	"github.com/Gabriel2233/keeper/ui"
 )
 
 func main() {
-    store, err := NewStore("./store.db")
+    store, err := db.NewStore("./store.db")
     if err != nil {
         panic(err)
     }
 
+    folders, err := store.ListFolders()
+    must(err)
+
+    sheets, err := store.ListSheetsInFolder(folders[0].Name)
+    must(err)
+
+    if len(sheets) == 0 {
+        sheets = []db.Sheet{}
+    }
+
     if len(os.Args) == 1 {
-        usage()
-        os.Exit(0)
+        ui := ui.NewUi(*store, folders, sheets)
+        ui.Loop()
     }
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 
     switch os.Args[1] {
     case "nf":
-        id, err := NewFolder(store)
-        if err != nil {
-            fmt.Printf("error: failed to create folder, reason: \n%s\n", err)
-            os.Exit(1)
-        }
+        id, err := cmd.NewFolder(store)
+        must(err)
 
         fmt.Printf("created new folder with id %d", id)
-    case "lf":
-        folders, err := ListFolders(store)
-        if err != nil {
-            fmt.Printf("error: failed to list folders, reason: \n%s\n", err)
-            os.Exit(1)
-        }
-
-        s, err := setupScreen()
-        if err != nil {
-            fmt.Printf("error: failed to setup tcell screen, reason: \n%s\n", err)
-            os.Exit(1)
-        }
-
-        state := NewListFoldersState(s, folders, 0)
-        state.Loop()
     case "rf":
-        err := RemoveFolder(store) 
-        if err != nil {
-            fmt.Printf("error: failed to remove folder, reason: \n%s\n", err)
-            os.Exit(1)
-        }
+        err := cmd.RemoveFolder(store) 
+        must(err)
 
         fmt.Println("folder removed successfully")
     case "ns":
-        id, err := NewSheet(store)
-        if err != nil {
-            fmt.Printf("error: failed to create sheet, reason: \n%s\n", err)
-            os.Exit(1)
-        }
+        id, err := cmd.NewSheet(store)
+        must(err)
 
         fmt.Printf("created new sheet with id %d", id)
-    case "ls":
-        sheets, err := ListSheetsUnderFolder(store)
-        if err != nil {
-            fmt.Printf("error: failed to list sheets, reason: \n%s\n", err)
-            os.Exit(1)
-        }
-
-        for _, s := range sheets {
-            fmt.Fprintf(w, "Id: %d\tName: %s\tAlias: %s\tCreated At: %s\n", s.Id, s.Name, s.Alias, s.CreatedAt.Format("Mon Jan _2"))
-        }
     case "rs":
-        err := RemoveSheet(store) 
-        if err != nil {
-            fmt.Printf("error: failed to remove sheet, reason: \n%s\n", err)
-            os.Exit(1)
-        }
+        err := cmd.RemoveSheet(store) 
+        must(err)
 
         fmt.Println("sheet removed successfully")
     }
@@ -84,4 +61,11 @@ func main() {
 
 func usage() {
     fmt.Println("Usage: ")
+}
+
+func must(err error) {
+    if err != nil {
+        fmt.Printf("error: %s\n", err)
+        os.Exit(1)
+    }
 }
