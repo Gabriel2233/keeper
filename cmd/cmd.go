@@ -13,12 +13,7 @@ import (
 
 var (
 	nfCmd = flag.NewFlagSet("nf", flag.ExitOnError)
-	rfCmd = flag.NewFlagSet("rf", flag.ExitOnError)
-	lfCmd = flag.NewFlagSet("lf", flag.ExitOnError)
-
 	nsCmd = flag.NewFlagSet("ns", flag.ExitOnError)
-	rsCmd = flag.NewFlagSet("rs", flag.ExitOnError)
-	lsCmd = flag.NewFlagSet("ls", flag.ExitOnError)
 )
 
 func parseArgs(flagSet *flag.FlagSet, argsLen int) ([]string, error) {
@@ -44,35 +39,6 @@ func NewFolder(store *db.Store) (int64, error) {
 	}
 
 	return id, nil
-}
-
-func ListFolders(store *db.Store) ([]db.Folder, error) {
-	var ret []db.Folder
-	_, err := parseArgs(nfCmd, 0)
-	if err != nil {
-		return ret, err
-	}
-
-	ret, err = store.ListFolders()
-	if err != nil {
-		return ret, err
-	}
-
-	return ret, nil
-}
-
-func RemoveFolder(store *db.Store) error {
-	args, err := parseArgs(nfCmd, 1)
-	if err != nil {
-		return err
-	}
-
-	err = store.RemoveFolderByName(args[0])
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func NewSheet(store *db.Store) (int64, error) {
@@ -109,33 +75,3 @@ func NewSheet(store *db.Store) (int64, error) {
 	return id, nil
 }
 
-func ListSheetsUnderFolder(store *db.Store) ([]db.Sheet, error) {
-	var ret []db.Sheet
-	args, err := parseArgs(nfCmd, 1)
-	if err != nil {
-		return ret, err
-	}
-
-	folderName := args[0]
-
-	ret, err = store.ListSheetsInFolder(folderName)
-	if err != nil {
-		return ret, err
-	}
-
-	return ret, nil
-}
-
-func RemoveSheet(store *db.Store) error {
-	args, err := parseArgs(nfCmd, 1)
-	if err != nil {
-		return err
-	}
-
-	err = store.RemoveSheetByAlias(args[0])
-	if err != nil {
-		return err
-	}
-
-	return nil
-}

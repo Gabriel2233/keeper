@@ -68,19 +68,6 @@ func (s *Store) AddSheet(folder, name, alias, data string) (int64, error) {
     return id, nil
 }
 
-func (s *Store) FindSheetByAlias(alias string) (Sheet, error) {
-    res := s.db.QueryRow("SELECT * FROM sheets WHERE alias = ?", alias)
-
-    var sheet Sheet
-    if err := res.Scan(&sheet.Id, &sheet.Name, &sheet.Alias, &sheet.Data, &sheet.CreatedAt, &sheet.Folder); err != nil {
-        if err == sql.ErrNoRows {
-            return sheet, errors.New("No such sheet")
-        }
-        return  sheet, err
-    }
-
-    return sheet, nil
-}
 
 func (s *Store) FindSheetById(id int64) (Sheet, error) {
     var sheet Sheet
@@ -96,13 +83,8 @@ func (s *Store) FindSheetById(id int64) (Sheet, error) {
     return sheet, nil
 }
 
-func (s *Store) RemoveSheetByAlias(alias string) error {
-    sheet, err := s.FindSheetByAlias(alias)
-    if err != nil {
-        return err
-    }
-
-    _, err = execStatement(s.db, "DELETE FROM sheets WHERE id = ?", sheet.Id)
+func (s *Store) RemoveSheetById(id int64) error {
+    _, err := execStatement(s.db, "DELETE FROM sheets WHERE id = ?", id)
     if err != nil {
         return err
     }
@@ -110,15 +92,10 @@ func (s *Store) RemoveSheetByAlias(alias string) error {
     return nil
 }
 
-func (s *Store) ListSheetsInFolder(folder string) ([]Sheet, error) {
-    folderId, err := s.FindFolderIdByName(folder)
-    if err != nil {
-        return nil, err
-    }
-
+func (s *Store) ListSheetsInFolder(id int64) ([]Sheet, error) {
     sheets := make([]Sheet, 0)
 
-    res, err := s.db.Query("SELECT * FROM sheets WHERE folder_id = ?", folderId)
+    res, err := s.db.Query("SELECT * FROM sheets WHERE folder_id = ?", id)
     if err != nil {
         return nil, err
     }
@@ -163,13 +140,8 @@ func (s *Store) FindFolderIdByName(name string) (int64, error) {
     return folderId, nil
 }
 
-func (s *Store) RemoveFolderByName(name string) error {
-    id, err := s.FindFolderIdByName(name)
-    if err != nil {
-        return err
-    }
-
-    _, err = execStatement(s.db, "DELETE FROM folders WHERE id = ?", id)
+func (s *Store) RemoveFolderById(id int64) error {
+    _, err := execStatement(s.db, "DELETE FROM folders WHERE id = ?", id)
     if err != nil {
         return err
     }
@@ -211,11 +183,18 @@ func execStatement(db *sql.DB, query string, args ...interface{}) (sql.Result, e
 
 func createTables(db *sql.DB) {
     stmts := []string{
-`CREATE TABLE IF NOT EXISTS folders (
-id INTEGER PRIMARY KEY,name TEXT NOT NULL UNIQUE,created_at DATETIME DEFAULT CURRENT_TIMESTAMP);`,
-`CREATE TABLE IF NOT EXISTS sheets (
-id INTEGER PRIMARY KEY,name TEXT NOT NULL,alias TEXT NOT NULL,data TEXT NOT NULL,created_at DATETIME DEFAULT CURRENT_TIMESTAMP, 
-folder_id INTEGER,FOREIGN KEY(folder_id) REFERENCES folders(id));`,
+`CREATE TABLE IF NOT EXISTS folders(
+id INTEGER PRIMARY KEY NOT NULL,
+name TEXT NOT NULL UNIQUE,
+created_at DATETIME DEFAULT CURRENT_TIMESTAMP);`,
+
+`CREATE TABLE IF NOT EXISTS sheets(
+id INTEGER PRIMARY KEY NOT NULL,
+name TEXT NOT NULL,
+alias TEXT NOT NULL UNIQUE,
+data TEXT NOT NULL,
+created_at DATETIME DEFAULT CURRENT_TIMESTAMP, 
+folder_id INTEGER REFERENCES folders(id) ON DELETE CASCADE);`,
     }
         
     tx, err := db.Begin()
